@@ -45,28 +45,28 @@ void max31855_get_fault(uint32_t raw_word, char* error_msg, size_t buffer_size)
     if(bits_uint32_read_bit(raw_word, MAX31855_BIT_FAULT_OC))
     {
         strncpy(error_msg, "Thermocouple is open-circuited", buffer_size);
+        error_msg[buffer_size - 1] = 0; // ensure null terminated
         return;
     }
-    
-    
-    switch(error_code)
+
+    // short-circuit to GND
+    if(bits_uint32_read_bit(raw_word, MAX31855_BIT_FAULT_SCG))
     {
-        case 0:
-            strncpy(error_msg, "No error", buffer_size);
-            break;
-        case 1:
-            strncpy(error_msg, "Thermocouple short-circuits to Vcc", buffer_size);
-            break;
-        case 2:
-            strncpy(error_msg, "Thermocouple short-circuits to GND", buffer_size);
-            break;
-        case 3:
-            strncpy(error_msg, "Thermocouple is open-circuited", buffer_size);
-            break;
-        default:
-            strncpy(error_msg, "Unrecognized error code", buffer_size);
-            break;
+        strncpy(error_msg, "Thermocouple is short-circuited to GND", buffer_size);
+        error_msg[buffer_size - 1] = 0; // ensure null terminated
+        return;
     }
 
+    // short-circuit to Vcc
+    if(bits_uint32_read_bit(raw_word, MAX31855_BIT_FAULT_SCV))
+    {
+        strncpy(error_msg, "Thermocouple is short-circuited to Vcc", buffer_size);
+        error_msg[buffer_size - 1] = 0; // ensure null terminated
+        return;
+    }
+
+    // no fault
+    strncpy(error_msg, "No fault", buffer_size);
     error_msg[buffer_size - 1] = 0; // ensure null terminated
+    return;
 }
